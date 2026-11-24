@@ -66,17 +66,16 @@ local function CreateOptions()
 	gen:Finish()
 	Place(gen, -14)
 
-	-- How it works ----------------------------------------------------------------------------
-	local how = Section("How it works")
+	-- What it does ----------------------------------------------------------------------------
+	local how = Section("What it does")
 	local p1 = how:Add(Para(how,
-		"The game only lets you drop items that can be used or equipped onto an action bar. Anything else - leather, ore, cloth, eggs, quest drops - is refused. " ..
-		"ActionBarAnything watches what is on your cursor; when it is something the game would refuse, a blue highlight follows your mouse over the action buttons. " ..
-		"Drop it there and the item is drawn on that slot with the total number in your bags in the top-left corner. It is remembered per character and follows the slot through bar paging and stances."), 70, -4, 2)
+		"Normally you can only put usable or equippable items on your action bars. With ActionBarAnything you can drag ANY item from your bags onto an empty action bar slot - leather, ore, cloth, eggs, quest drops - " ..
+		"and the slot shows the item with a running count of how many you are carrying. Handy for keeping an eye on gathering mats, quest collectibles or vendor trash without opening your bags."), 56, -4, 2)
 	local p2 = how:Add(Para(how,
-		"|cffffd200Hover|r the slot for the item tooltip.  |cffffd200Drag|r it to another slot to move it, or to a bag to take it off the bar.  |cffffd200Right-click|r to clear the slot."), 30, -8, 2)
+		"|cffffd200Hover|r the slot for the item tooltip.  |cffffd200Drag|r it to another slot to move it, or to a bag to take it off the bar.  |cffffd200Right-click|r to clear the slot.  " ..
+		"Your placements are saved per character and follow the slot when the bar pages or you change stance."), 44, -8, 2)
 	local p3 = how:Add(Para(how,
-		"Dropping a real spell, macro or usable item onto a slot you have claimed works as normal: the slot dims while you drag, the game takes the drop, and the remembered item is removed.  " ..
-		"The slot is only a picture - pressing its keybind does nothing, because the game still considers it empty."), 44, -8, 2)
+		"These slots are for looking, not clicking: the keybind does nothing and the item cannot be used from the bar. Dropping a spell or usable item on one replaces it as normal."), 30, -8, 2)
 	how:Finish()
 	Place(how, -14)
 

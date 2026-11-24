@@ -35,6 +35,25 @@ local function CreateOverlay(button)
 	ov.icon:SetAllPoints()
 	ov.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)   -- same crop as Blizzard action icons
 
+	-- Button border drawn OVER the icon. Our overlay sits above the Blizzard button (it has to,
+	-- for mouse capture), so its NormalTexture ends up hidden under our icon; we re-draw a copy of
+	-- whatever the real button uses (atlas on Forever, file texture on Era) with the same geometry.
+	ov.border = ov:CreateTexture(nil, "OVERLAY")
+	local src = button.GetNormalTexture and button:GetNormalTexture()
+	if src then
+		local atlas = src.GetAtlas and src:GetAtlas()
+		if atlas then
+			ov.border:SetAtlas(atlas)
+		else
+			ov.border:SetTexture(src:GetTexture())
+			ov.border:SetTexCoord(src:GetTexCoord())
+		end
+		-- anchor to the real border so size/offset match whatever Blizzard laid out (Era's
+		-- NormalTexture is bigger than the button and offset)
+		ov.border:SetPoint("TOPLEFT", src, "TOPLEFT")
+		ov.border:SetPoint("BOTTOMRIGHT", src, "BOTTOMRIGHT")
+	end
+
 	ov.count = ov:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 	ov.count:SetPoint("TOPLEFT", 2, -2)
 	ov.count:SetJustifyH("LEFT")
@@ -50,8 +69,10 @@ local function CreateOverlay(button)
 	-- drag the item back out: it becomes a real bag item on the cursor. The source slot is NOT
 	-- cleared yet - Catcher does that when the item lands on another slot (move), or we do it on
 	-- DRAG_END if the cursor was dropped anywhere else. Dropping back on the same slot = no-op.
+	-- Honors Blizzard's "Lock Action Bars" + its pick-up modifier, like a real button.
 	ov:SetScript("OnDragStart", function(self)
 		if not self.itemID or not self.slot then return end
+		if not ABA.ActionBarDragAllowed() then return end
 		if ItemCount(self.itemID) <= 0 then ABA.ClearSlot(self.slot) return end
 		ABA.dragSourceSlot = self.slot
 		PickupItem(self.itemID)

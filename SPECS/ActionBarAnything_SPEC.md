@@ -41,6 +41,7 @@ Overlay.lua     per-slot display overlays, paging sync, drag-out
       **Move**: overlay `OnDragStart` sets `ABA.dragSourceSlot`; catcher drop on another slot moves the claim, same slot is a no-op, a drop anywhere else (`EndDrag`) clears the source.
       Open from S1: `PickupAction(slot)` on an occupied slot from our drop handler — untested.
 - [x] **M1b** (2026-11-24) — `Options.lua`: GotJunk-style settings page (title, General: Enable checkbox, How-it-works prose). Account-wide `ActionBarAnythingDB.settings.enabled`; `/aba` opens it, `/aba list|clear|debug`. Disabled = stock drag behaviour, overlays hidden, claims kept.
+- [ ] **M1c** (2026-11-24, awaiting in-game OK) — bar-lock: overlay drag-out honours `lockActionBars` + `IsModifiedClick("PICKUPACTION")` (`ABA.ActionBarDragAllowed`); drops are NOT gated (matches Blizzard). Border: a copy of the button's NormalTexture (atlas or file) drawn in OVERLAY above our icon. Options text reworded to "What it does". README.md.
 - [ ] **M2** — options: count includes bank; click action on a fake slot (nothing / open bags). Untested: options page text heights.
 - [ ] **M3** — Era TOC + verification.
 

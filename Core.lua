@@ -83,6 +83,15 @@ end
 
 -- Internal message bus (modules subscribe; keeps Catcher/Overlay decoupled) -----------------------
 local listeners = {}
+
+-- Blizzard's "Lock Action Bars" (Options > Action Bars; CVar lockActionBars) and its override
+-- modifier ("Pick Up Action Key", IsModifiedClick("PICKUPACTION"), default Shift). The same rule
+-- ActionBarActionButtonMixin applies to drag-start AND drop: when locked, both need the modifier.
+function ABA.ActionBarDragAllowed()
+	if GetCVar("lockActionBars") ~= "1" then return true end
+	return IsModifiedClick("PICKUPACTION")
+end
+
 function ABA.On(message, fn)
 	listeners[message] = listeners[message] or {}
 	table.insert(listeners[message], fn)
