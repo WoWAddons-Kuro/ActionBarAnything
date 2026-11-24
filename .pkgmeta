@@ -1,0 +1,8 @@
+package-as: ActionBarAnything
+
+ignore:
+  - "*.md"
+  - SPECS
+  - Spike_S1.lua
+  - .gitignore
+  - .pkgmeta
