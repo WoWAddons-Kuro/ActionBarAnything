@@ -92,10 +92,11 @@ local function BeginDrag(mode, itemID)
 	end
 end
 
-catcher:SetScript("OnReceiveDrag", function()
+local function HandleDrop(via)
 	local button = hoveredButton
 	local slot = button and button.action
 	local kind, itemID, itemLink = GetCursorInfo()
+	ABA.Debug("drop via %s on %s slot=%s cursor=%s %s", via, button and button:GetName() or "nil", tostring(slot), tostring(kind), tostring(itemID))
 	if not slot or kind ~= "item" or not itemID then return end
 
 	if HasAction(slot) then
@@ -123,7 +124,14 @@ catcher:SetScript("OnReceiveDrag", function()
 	end
 	ABA.SetSlotItem(slot, itemID)
 	ABA.Debug("claimed slot %d <- %s", slot, tostring(itemLink))
-end)
+end
+
+-- Spike S1 saw only OnReceiveDrag on the side bars; register the click paths too in case the
+-- bottom bars (inside MainMenuBarArtFrame on Era) deliver the release as a click.
+catcher:RegisterForClicks("AnyUp", "AnyDown")
+catcher:SetScript("OnReceiveDrag", function() HandleDrop("OnReceiveDrag") end)
+catcher:SetScript("OnClick", function(_, b, down) HandleDrop("OnClick:" .. tostring(b) .. (down and ":down" or ":up")) end)
+catcher:SetScript("OnMouseUp", function(_, b) HandleDrop("OnMouseUp:" .. tostring(b)) end)
 
 -- Cursor events -----------------------------------------------------------------------------------
 tracker:RegisterEvent("CURSOR_CHANGED")
