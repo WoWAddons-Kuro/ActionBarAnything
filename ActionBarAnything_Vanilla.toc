@@ -15,6 +15,7 @@ Core.lua
 Bars\Bars.lua
 Bars\Bars_Blizzard.lua
 Bars\Bars_Dominos.lua
+Bars\Bars_ElvUI.lua
 Bars\Bars_Select.lua
 Catcher.lua
 Overlay.lua

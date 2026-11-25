@@ -32,6 +32,7 @@ Core.lua                 addon table, saved vars, button walk (via ABA.Bars), me
 Bars\Bars.lua            BAR PROVIDER INTERFACE (ABA.BARS_INTERFACE): IsPresent, ButtonNames, ShowEmptySlots, RepairAfterCrash
 Bars\Bars_Blizzard.lua   stock bars: 8 x 12 names; empty grid via alwaysShowActionBars CVar (marker settings.gridForcedFrom)
 Bars\Bars_Dominos.lua    Dominos: DominosActionButton1..132; empty grid via Dominos:SetShowEmptyButtons (marker settings.dominosEmptyButtonsForcedFrom)
+Bars\Bars_ElvUI.lua      ElvUI: ElvUI_Bar{1-10,13-15}Button1..12 (LibActionButton-1.0-ElvUI); empty grid via per-bar E.db.actionbar.barN.showGrid + AB:UpdateButtonSettings() (marker settings.elvuiShowGridForcedBars = array of bar keys we set)
 Bars\Bars_Select.lua     validates every provider against the interface, binds the union of PRESENT providers onto ABA.Bars
 Catcher.lua              eligibility test, roaming drop catcher (rect-based hover, OnReceiveDrag + OnClick)
 Overlay.lua              per-slot display overlays, paging sync, drag-out

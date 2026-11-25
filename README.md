@@ -24,4 +24,6 @@ These slots are for looking, not clicking: the game still considers the slot emp
 
 ## Compatibility
 
-Works with Blizzard's default action bars (all eight bars). Supports WoW Forever and Classic Era. No libraries.
+Works with Blizzard's default action bars (all eight), **Dominos** and **ElvUI**. Each bar system has its own
+small adapter under `Bars\`; adding another (Bartender4, ...) is one file. Supports WoW Forever and Classic Era.
+No libraries.
