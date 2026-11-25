@@ -38,12 +38,24 @@ local hoveredButton
 
 local tracker = CreateFrame("Frame")
 
+-- Rect test instead of IsMouseOver(): a hidden frame keeps its rect but IsMouseOver() is false for
+-- it, and an empty button may be hidden (Always Show off, Dominos per-bar empty-buttons off). The
+-- catcher is shown over the rect, so the drop itself does not need the button to be visible.
+local function RectContainsCursor(frame)
+	local l, b, w, h = frame:GetRect()
+	if not l or w == 0 then return false end
+	local scale = frame:GetEffectiveScale()
+	local x, y = GetCursorPosition()
+	x, y = x / scale, y / scale
+	return x >= l and x <= l + w and y >= b and y <= b + h
+end
+
 local function TrackCursor()
 	local over
 	local buttons = ABA.actionButtons
 	for i = 1, #buttons do
 		local b = buttons[i]
-		if b:IsVisible() and b:IsMouseOver() then over = b break end
+		if ABA.ButtonBarIsVisible(b) and RectContainsCursor(b) then over = b break end
 	end
 	if over ~= hoveredButton then
 		hoveredButton = over
@@ -62,7 +74,7 @@ local function EndDrag()
 	dragMode, dragItemID, hoveredButton = nil, nil, nil
 	catcher:Hide()
 	tracker:SetScript("OnUpdate", nil)
-	ABA.ForceGridShown(false)
+	ABA.Bars.ShowEmptySlots(false)
 	-- an overlay drag that did not land on another slot: the item went to a bag / the floor / was
 	-- cancelled, so the source slot gives up its claim
 	local src = ABA.dragSourceSlot
@@ -84,12 +96,12 @@ local function BeginDrag(mode, itemID)
 		catcher:Hide()
 		-- Blizzard will not fire ACTIONBAR_SHOWGRID for this item, so empty slots stay hidden
 		-- unless we show the grid ourselves (restored in EndDrag)
-		ABA.ForceGridShown(true)
+		ABA.Bars.ShowEmptySlots(true)
 		tracker:SetScript("OnUpdate", TrackCursor)
 	else
 		tracker:SetScript("OnUpdate", nil)
 		catcher:Hide()
-		ABA.ForceGridShown(false)
+		ABA.Bars.ShowEmptySlots(false)
 	end
 	if isNew then
 		ABA.Debug("drag begin: %s item=%s", mode, tostring(itemID))
@@ -99,7 +111,7 @@ end
 
 local function HandleDrop(via)
 	local button = hoveredButton
-	local slot = button and button.action
+	local slot = button and ABA.ActionSlotOf(button)
 	local kind, itemID, itemLink = GetCursorInfo()
 	ABA.Debug("drop via %s on %s slot=%s cursor=%s %s", via, button and button:GetName() or "nil", tostring(slot), tostring(kind), tostring(itemID))
 	if not slot or kind ~= "item" or not itemID then return end

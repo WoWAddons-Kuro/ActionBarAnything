@@ -64,58 +64,47 @@ function ABA.ForEachClaimedSlot(fn)
 	for slot, itemID in pairs(CharDB().slots) do fn(slot, itemID) end
 end
 
--- Blizzard action buttons ----------------------------------------------------------------------
-local BAR_PREFIXES = {
-	"ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton",
-	"MultiBarRightButton", "MultiBarLeftButton", "MultiBar5Button", "MultiBar6Button", "MultiBar7Button",
-}
-ABA.actionButtons = {}   -- array of existing Blizzard action button frames (built at PLAYER_LOGIN)
+-- Action buttons ---------------------------------------------------------------------------------
+-- Which frames are action buttons, and how to show empty ones, is bar-provider knowledge
+-- (Blizzard vs Dominos vs ...). It lives in Bars\Bars_*.lua behind ABA.Bars; Core only walks
+-- the names the active providers hand back.
+ABA.actionButtons = {}   -- array of existing action button frames (rebuilt at login and entering world)
+local knownButtons = {}  -- [frame] = true, so a rescan never adds a frame twice
 
 local function CollectActionButtons()
-	wipe(ABA.actionButtons)
-	for _, prefix in ipairs(BAR_PREFIXES) do
-		for i = 1, 12 do
-			local b = _G[prefix .. i]
-			if b then ABA.actionButtons[#ABA.actionButtons + 1] = b end
+	local added = 0
+	for _, name in ipairs(ABA.Bars.ButtonNames()) do
+		local b = _G[name]
+		if b and not knownButtons[b] and b.GetAttribute then
+			knownButtons[b] = true
+			ABA.actionButtons[#ABA.actionButtons + 1] = b
+			added = added + 1
 		end
 	end
+	if added > 0 then ABA.Debug("action buttons: +%d (total %d)", added, #ABA.actionButtons) end
+	return added
+end
+ABA.CollectActionButtons = CollectActionButtons
+
+-- The action slot a button currently shows. Blizzard keeps button.action in step with the
+-- secure "action" attribute; bar addons (Dominos SetID(0)s reused Blizzard buttons to kill the
+-- stock paging) only maintain the attribute, so the attribute is the authority.
+function ABA.ActionSlotOf(button)
+	local slot = button:GetAttribute("action")
+	if type(slot) ~= "number" then slot = button.action end
+	if type(slot) == "number" and slot > 0 then return slot end
+	return nil
+end
+
+-- The frame whose visibility says whether a button is "on screen": its bar. A button itself may be
+-- hidden just because its slot is empty (Always Show off / Dominos per-bar empty-buttons off).
+function ABA.ButtonBarIsVisible(button)
+	local bar = button:GetParent()
+	return bar ~= nil and bar:IsVisible()
 end
 
 -- Internal message bus (modules subscribe; keeps Catcher/Overlay decoupled) -----------------------
 local listeners = {}
-
--- Empty-slot grid ---------------------------------------------------------------------------------
--- With "Always Show Action Bars" off, Blizzard hides empty buttons and only shows them on
--- ACTIONBAR_SHOWGRID, which the engine fires for placeable things only - never for a trade good.
--- So during a claimable drag we flip the CVar ourselves (Blizzard reacts to its own CVAR_UPDATE,
--- no taint) and put it back when the drag ends. The user's value is written to SavedVariables
--- BEFORE the flip so a /reload or disconnect mid-drag can be repaired at next login. (A hard
--- client crash loses unsaved SavedVariables; that case cannot be covered.)
-local GRID_CVAR = "alwaysShowActionBars"
-
-function ABA.ForceGridShown(on)
-	local s = Settings()
-	if on then
-		if s.gridForcedFrom then return end                 -- already forced by us
-		local cur = GetCVar(GRID_CVAR)
-		if cur == "1" then return end                       -- user already shows the grid; nothing to do
-		s.gridForcedFrom = cur or "0"
-		SetCVar(GRID_CVAR, "1")
-		ABA.Debug("grid forced on (was %s)", s.gridForcedFrom)
-	elseif s.gridForcedFrom then
-		SetCVar(GRID_CVAR, s.gridForcedFrom)
-		ABA.Debug("grid restored to %s", s.gridForcedFrom)
-		s.gridForcedFrom = nil
-	end
-end
-
-local function RepairGridAfterCrash()
-	local s = Settings()
-	if s.gridForcedFrom then
-		ABA.Log("restoring 'Always Show Action Bars' to %s (a previous session ended mid-drag)", s.gridForcedFrom)
-		ABA.ForceGridShown(false)
-	end
-end
 
 -- Blizzard's "Lock Action Bars" (Options > Action Bars; CVar lockActionBars) and its override
 -- modifier ("Pick Up Action Key", IsModifiedClick("PICKUPACTION"), default Shift). The same rule
@@ -138,12 +127,16 @@ end
 -- Events -----------------------------------------------------------------------------------------
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:SetScript("OnEvent", function(_, event, ...)
 	if event == "PLAYER_LOGIN" then
 		CollectActionButtons()
 		CharDB()
-		RepairGridAfterCrash()
+		ABA.Bars.RepairAfterCrash()
 		ABA.Fire("LOGIN")
+	elseif event == "PLAYER_ENTERING_WORLD" then
+		-- bar addons (Dominos bars 7-11) create their buttons after PLAYER_LOGIN
+		if CollectActionButtons() > 0 then ABA.Fire("BUTTONS_CHANGED") end
 	end
 end)
 
@@ -166,7 +159,7 @@ SlashCmdList.ACTIONBARANYTHING = function(msg)
 			local link = select(2, GetItemInfo(itemID))
 			ABA.Log("  slot %d: %s (id %d)", slot, tostring(link), itemID)
 		end)
-		ABA.Log("%d claimed slot(s), %d action buttons, enabled=%s. /aba list | clear | debug", n, #ABA.actionButtons, tostring(ABA.IsEnabled()))
+		ABA.Log("%d claimed slot(s), %d action buttons (bars: %s), enabled=%s. /aba list | clear | debug", n, #ABA.actionButtons, ABA.Bars.ActiveNames(), tostring(ABA.IsEnabled()))
 	else
 		ABA.OpenOptions()
 	end

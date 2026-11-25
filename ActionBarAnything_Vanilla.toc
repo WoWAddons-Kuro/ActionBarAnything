@@ -8,7 +8,14 @@
 ## X-Category: Action Bars
 ## SavedVariables: ActionBarAnythingDB
 
+# Bar providers: Bars.lua declares the interface, each Bars_<Name>.lua implements it,
+# Bars_Select.lua binds the active ones onto ABA.Bars. Core.lua's ABA table must exist first
+# but it registers nothing from the providers at load time, so Core loads before them.
 Core.lua
+Bars\Bars.lua
+Bars\Bars_Blizzard.lua
+Bars\Bars_Dominos.lua
+Bars\Bars_Select.lua
 Catcher.lua
 Overlay.lua
 Options.lua

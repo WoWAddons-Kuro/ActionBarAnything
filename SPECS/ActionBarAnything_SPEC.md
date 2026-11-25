@@ -28,10 +28,22 @@ Not secure frames anywhere: nothing is cast, so Show/Hide/anchor work in combat.
 
 ```
 ActionBarAnything.toc
-Core.lua        addon table, saved vars, slash, events
-Catcher.lua     eligibility test, roaming drop catcher
-Overlay.lua     per-slot display overlays, paging sync, drag-out
+Core.lua                 addon table, saved vars, button walk (via ABA.Bars), message bus, slash
+Bars\Bars.lua            BAR PROVIDER INTERFACE (ABA.BARS_INTERFACE): IsPresent, ButtonNames, ShowEmptySlots, RepairAfterCrash
+Bars\Bars_Blizzard.lua   stock bars: 8 x 12 names; empty grid via alwaysShowActionBars CVar (marker settings.gridForcedFrom)
+Bars\Bars_Dominos.lua    Dominos: DominosActionButton1..132; empty grid via Dominos:SetShowEmptyButtons (marker settings.dominosEmptyButtonsForcedFrom)
+Bars\Bars_Select.lua     validates every provider against the interface, binds the union of PRESENT providers onto ABA.Bars
+Catcher.lua              eligibility test, roaming drop catcher (rect-based hover, OnReceiveDrag + OnClick)
+Overlay.lua              per-slot display overlays, paging sync, drag-out
+Options.lua              settings page
 ```
+
+**Bar providers** follow the workspace's file-segregated interface rule (PROJECT_STRUCTURE.md "Client"
+pattern) but several may be active at once - Blizzard always, a bar addon on top. Core/Catcher/Overlay
+call only `ABA.Bars.*`, `ABA.ActionSlotOf(button)` (the secure `action` attribute; `.action` fallback)
+and `ABA.ButtonBarIsVisible(button)` (the BAR's visibility - a hidden empty button still counts).
+Adding Bartender4 = one new `Bars_Bartender4.lua` (`BT4Button1..180`, grid via its own API) + a TOC line.
+Why Dominos needed its own grid path: it filters Blizzard's showgrid reasons 1/4 out of its bitmask, so the CVar flip is inert for its buttons.
 
 ## Phases
 

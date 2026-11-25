@@ -99,12 +99,14 @@ local function RefreshOverlay(ov)
 end
 
 -- Which overlays should be visible right now: for every Blizzard button, the slot it currently
--- displays (button.action, which follows paging/stances) is either claimed or not.
+-- displays (the "action" attribute, which follows paging/stances) is either claimed or not.
+-- Visibility follows the BAR, not the button: an empty button is hidden by Blizzard/Dominos when
+-- the empty grid is off, and a claimed slot is empty as far as they are concerned.
 local function SyncAll()
 	local enabled = ABA.IsEnabled()
 	for i = 1, #ABA.actionButtons do
 		local button = ABA.actionButtons[i]
-		local slot = button.action
+		local slot = ABA.ActionSlotOf(button)
 		local itemID = enabled and ABA.GetSlotItem(slot) or nil
 		local ov = overlays[button]
 		if itemID then
@@ -115,7 +117,7 @@ local function SyncAll()
 			ov.slot, ov.itemID = slot, itemID
 			RefreshOverlay(ov)
 			SetInteractive(ov, not nativeDragActive)
-			if button:IsVisible() then ov:Show() else ov:Hide() end
+			if ABA.ButtonBarIsVisible(button) then ov:Show() else ov:Hide() end
 		elseif ov then
 			ov.slot, ov.itemID = nil, nil
 			ov:Hide()
@@ -149,6 +151,7 @@ end
 -- Wiring ------------------------------------------------------------------------------------------
 ABA.On("SLOTS_CHANGED", SyncAll)
 ABA.On("ENABLED_CHANGED", SyncAll)
+ABA.On("BUTTONS_CHANGED", SyncAll)   -- a bar addon created more buttons (Dominos bars 7-11)
 ABA.On("DRAG_BEGIN", function(mode)
 	nativeDragActive = (mode == "native")
 	SyncAll()
