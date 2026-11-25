@@ -2,7 +2,7 @@
 ## Title: ActionBarAnything
 ## Notes: Put any bag item - even ones Blizzard refuses, like trade goods - on an action bar slot and see its total count there.
 ## Author: Kuro
-## Version: @project-version@
+## Version: v2026.11.24.1706
 ## IconTexture: Interface\AddOns\ActionBarAnything\Media\ActionBarAnything.tga
 ## X-Website: https://github.com/WoWAddons-Kuro/ActionBarAnything
 ## X-Category: Action Bars
