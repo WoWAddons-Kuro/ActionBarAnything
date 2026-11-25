@@ -84,6 +84,39 @@ end
 -- Internal message bus (modules subscribe; keeps Catcher/Overlay decoupled) -----------------------
 local listeners = {}
 
+-- Empty-slot grid ---------------------------------------------------------------------------------
+-- With "Always Show Action Bars" off, Blizzard hides empty buttons and only shows them on
+-- ACTIONBAR_SHOWGRID, which the engine fires for placeable things only - never for a trade good.
+-- So during a claimable drag we flip the CVar ourselves (Blizzard reacts to its own CVAR_UPDATE,
+-- no taint) and put it back when the drag ends. The user's value is written to SavedVariables
+-- BEFORE the flip so a /reload or disconnect mid-drag can be repaired at next login. (A hard
+-- client crash loses unsaved SavedVariables; that case cannot be covered.)
+local GRID_CVAR = "alwaysShowActionBars"
+
+function ABA.ForceGridShown(on)
+	local s = Settings()
+	if on then
+		if s.gridForcedFrom then return end                 -- already forced by us
+		local cur = GetCVar(GRID_CVAR)
+		if cur == "1" then return end                       -- user already shows the grid; nothing to do
+		s.gridForcedFrom = cur or "0"
+		SetCVar(GRID_CVAR, "1")
+		ABA.Debug("grid forced on (was %s)", s.gridForcedFrom)
+	elseif s.gridForcedFrom then
+		SetCVar(GRID_CVAR, s.gridForcedFrom)
+		ABA.Debug("grid restored to %s", s.gridForcedFrom)
+		s.gridForcedFrom = nil
+	end
+end
+
+local function RepairGridAfterCrash()
+	local s = Settings()
+	if s.gridForcedFrom then
+		ABA.Log("restoring 'Always Show Action Bars' to %s (a previous session ended mid-drag)", s.gridForcedFrom)
+		ABA.ForceGridShown(false)
+	end
+end
+
 -- Blizzard's "Lock Action Bars" (Options > Action Bars; CVar lockActionBars) and its override
 -- modifier ("Pick Up Action Key", IsModifiedClick("PICKUPACTION"), default Shift). The same rule
 -- ActionBarActionButtonMixin applies to drag-start AND drop: when locked, both need the modifier.
@@ -109,6 +142,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
 	if event == "PLAYER_LOGIN" then
 		CollectActionButtons()
 		CharDB()
+		RepairGridAfterCrash()
 		ABA.Fire("LOGIN")
 	end
 end)

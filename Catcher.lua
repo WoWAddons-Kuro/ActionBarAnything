@@ -62,6 +62,7 @@ local function EndDrag()
 	dragMode, dragItemID, hoveredButton = nil, nil, nil
 	catcher:Hide()
 	tracker:SetScript("OnUpdate", nil)
+	ABA.ForceGridShown(false)
 	-- an overlay drag that did not land on another slot: the item went to a bag / the floor / was
 	-- cancelled, so the source slot gives up its claim
 	local src = ABA.dragSourceSlot
@@ -81,10 +82,14 @@ local function BeginDrag(mode, itemID)
 	dragMode, dragItemID, hoveredButton = mode, itemID, nil
 	if mode == "claimable" then
 		catcher:Hide()
+		-- Blizzard will not fire ACTIONBAR_SHOWGRID for this item, so empty slots stay hidden
+		-- unless we show the grid ourselves (restored in EndDrag)
+		ABA.ForceGridShown(true)
 		tracker:SetScript("OnUpdate", TrackCursor)
 	else
 		tracker:SetScript("OnUpdate", nil)
 		catcher:Hide()
+		ABA.ForceGridShown(false)
 	end
 	if isNew then
 		ABA.Debug("drag begin: %s item=%s", mode, tostring(itemID))
@@ -126,12 +131,17 @@ local function HandleDrop(via)
 	ABA.Debug("claimed slot %d <- %s", slot, tostring(itemLink))
 end
 
--- Spike S1 saw only OnReceiveDrag on the side bars; register the click paths too in case the
--- bottom bars (inside MainMenuBarArtFrame on Era) deliver the release as a click.
-catcher:RegisterForClicks("AnyUp", "AnyDown")
+-- Two ways an item leaves the cursor onto a frame, and the engine delivers them differently:
+--   drag-and-release   (mouse held from the bag to the bar)  -> OnReceiveDrag
+--   click-to-pick-up, move, click-to-place                    -> OnClick (no drag is in progress)
+-- Both must land in HandleDrop. Verified Era 2026-11-24 after a false start: the click path was
+-- removed once because a drag-only test never fired it. The catcher only exists while a claimable
+-- item is on the cursor, so a left-click on it is always intent to drop.
 catcher:SetScript("OnReceiveDrag", function() HandleDrop("OnReceiveDrag") end)
-catcher:SetScript("OnClick", function(_, b, down) HandleDrop("OnClick:" .. tostring(b) .. (down and ":down" or ":up")) end)
-catcher:SetScript("OnMouseUp", function(_, b) HandleDrop("OnMouseUp:" .. tostring(b)) end)
+catcher:RegisterForClicks("LeftButtonUp")
+catcher:SetScript("OnClick", function(_, mouseButton)
+	if mouseButton == "LeftButton" then HandleDrop("OnClick") end
+end)
 
 -- Cursor events -----------------------------------------------------------------------------------
 tracker:RegisterEvent("CURSOR_CHANGED")
